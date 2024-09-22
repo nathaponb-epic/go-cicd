@@ -1,0 +1,56 @@
+name: Go
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v3
+
+    - name: Install Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: 1.19
+        check-latest: true
+
+    - name: Format code
+      run: gofmt -s -w . && git diff --exit-code
+
+    - name: Go Vet
+      run: go vet ./...
+
+    - name: Tidy module
+      run: go mod tidy && git diff --exit-code
+
+    - name: Go Mod
+      run: go mod download
+
+    - name: Go Mod Verify
+      run: go mod verify
+
+    - name: Go Generate
+      run: go generate ./... && git diff --exit-code
+
+    - name: Go Build
+      run: go build -o /dev/null ./...
+
+    - name: Go Test
+      run: go test -v
+
+    # - name: Upload Coverage
+    #   if: ${{ !inputs.skipTests }}  # upload when we really run our tests
+    #   uses: codecov/codecov-action@v3
+    #   continue-on-error: true  # we don't care if it fails
+    #   with:
+    #     token: ${{secrets.CODECOV_TOKEN}}  # set in repository settings
+    #     file: ./coverage.txt  # file from the previous step
+    #     fail_ci_if_error: false
+  
+  vuln:
+    uses: cristalhq/.github/.github/workflows/vuln.yml@v0.4.0
